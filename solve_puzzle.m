@@ -2,18 +2,10 @@ function [candidates, puzzle, breaker] = solve_puzzle( puzzle,candidates)
 
     breaker = 0;
     while(game_complete(puzzle) == 0)
-        
-        for i = 1:9
-            
-            for j = 1:9
-                
-                %fill candidates tensor with appropriate values
-                candidates = fill_candidates(puzzle,candidates,i,j);
-                
-            end
-            
-        end
-        
+                       
+        %fill candidates tensor with appropriate values
+        candidates = fill_candidates(puzzle,candidates);
+
         %sets the values we are certain of. If none, set a flag.
         [puzzle, flag_candidates] = set_certain(puzzle,candidates);
   
@@ -41,7 +33,7 @@ function [candidates, puzzle, breaker] = solve_puzzle( puzzle,candidates)
 end
 
 %check the horizontal, vertical and square possibilities for each place
-function sol = fill_candidates(puzzle,candidates,i,j)
+function sol = fill_candidates(puzzle,candidates,)
     
     sol = candidates;
     %horizontal check
