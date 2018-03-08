@@ -1,21 +1,46 @@
-function [candidates, puzzle] = solve_puzzle( puzzle,candidates)
+function [candidates, puzzle, breaker] = solve_puzzle( puzzle,candidates)
 
-    for k = 1:1000
-        for i = 1:9
-            for j = 1:9
-            candidates = fill_candidates(puzzle,candidates,i,j); %fill candidates tensor with appropriate values
-            end
-        end
-        [puzzle, flag] = set_certain(puzzle,candidates); %sets the values we are certain of. If none, set a flag.
-    
-%      if flag == 1
-%         puzzle = crook(puzzle,candidates); %implementation of crooks algorithm
-%      end
-  
+    breaker = 0;
+    while(game_complete(puzzle) == 0)
         
+        for i = 1:9
+            
+            for j = 1:9
+                
+                %fill candidates tensor with appropriate values
+                candidates = fill_candidates(puzzle,candidates,i,j);
+                
+            end
+            
+        end
+        
+        %sets the values we are certain of. If none, set a flag.
+        [puzzle, flag_candidates] = set_certain(puzzle,candidates);
+  
+        %try place finding method
+        if(flag_candidates == 0) 
+            
+            [puzzle, flag_place] = place_finding(candidates, puzzle);
+
+            %if both candidate checking and place finding methods fail, GG.
+            if(flag_place == 0)
+                
+                disp('I cant solve this puzzle sorry');
+                break; 
+                
+            end
+            
+        end   
+        
+        breaker = breaker + 1;
+        
+        if(breaker == 1000)
+            break;
+        end
     end
 end
 
+%check the horizontal, vertical and square possibilities for each place
 function sol = fill_candidates(puzzle,candidates,i,j)
     
     sol = candidates;
@@ -73,51 +98,90 @@ function sol = fill_candidates(puzzle,candidates,i,j)
 
 end
 
-function [sol, flag] = set_certain(puzzle, candidates);
+%set the values that we are certain about
+function [sol, flag] = set_certain(puzzle, candidates)
     
     flag = 0;
     sol = puzzle;
-    count = 0;
     for i = 1:9
         for j = 1:9
           
             if(puzzle(i,j) == 0 && sum(candidates(i,j,:))==8)
                 
                 sol(i,j) = find(candidates(i,j,:) == 0); %find index with 0.
-                count = count +1;
+                flag = 1; %we have solved at least one cell in puzzle
                 
             end
         end
     end
-    
-    
-    
-    if(count > 0)
-        flag = 1; %return flag
-    end
-    
-
 end
 
+%implement crooks algorithm (educated guessing and higher level logic)
+
+%{
 function sol = crook(puzzle,candidates)
 
     num_candidates = sum(candidates,3) %take the sum across 3rd dimension to get the total number of impossible choices for each cell.
     for i = 1:9
         for j = 1:9  
             if num_candidates(i,j) == 7
-                result = find_match(i,j)
+                result = find_match(i,j);
             end
               
         end
     end
     
 end
+%}
 
-function sol = find_match(i,j)
+function [puzzle, flag2] = place_finding(candidates, puzzle)
 
+    flag2 = 0;
+    %third dimension. Check the viablilty of each subsquare, row and column
+    %for each value
+    for k = 1:9
+        %find the candidates for all numbers i.e row k =1 are the
+        %candidates/viability of each index being 1
+        values = candidates(:,:,k);
+
+        horizontal = sum(values,1);
+        vertical = sum(values,2);
+        
+        for n = 1:9 
+ 
+            if(horizontal(n) == 8)
+                
+                x_value = find(candidates(:,n,k) == 0);
+                puzzle(x_value,n) = k;
+                flag2 = 1;
+                
+            end
+            
+            if(vertical(n) == 8)
+                
+                y_value = find(candidates(n,:,k) == 0);
+                puzzle(n,y_value) = k;
+                flag2 = 1;
+                
+            end
+            
+        end
+        
+    end
     
-
-
 end
 
+function status = game_complete(puzzle)
+   
+    status = 1;
+    temp = puzzle < 1; %find indices that are not solved
+     
+
+    if (sum(sum(temp)) > 0)
+        
+        status = 0; %incomplete game continue on
+
+    end
+
+end
     
